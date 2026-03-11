@@ -1,0 +1,51 @@
+version: 2
+project_name: tdb
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/tdb
+    binary: tdb
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+
+brews:
+  - repository:
+      owner: minee
+      name: homebrew-tap
+    homepage: "https://github.com/minee/tdb"
+    description: "TUI database client for PostgreSQL, MySQL, SQLite, and SQL Server"
+    license: "MIT"
+    install: |
+      bin.install "tdb"
+    test: |
+      system "#{bin}/tdb", "--version"
