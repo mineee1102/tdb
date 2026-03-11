@@ -42,6 +42,7 @@ brews:
   - repository:
       owner: mineee1102
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: "https://github.com/mineee1102/tdb"
     description: "TUI database client for PostgreSQL, MySQL, SQLite, and SQL Server"
     license: "MIT"
