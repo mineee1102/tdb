@@ -46,6 +46,8 @@ brews:
     homepage: "https://github.com/mineee1102/tdb"
     description: "TUI database client for PostgreSQL, MySQL, SQLite, and SQL Server"
     license: "MIT"
+    dependencies:
+      - name: neovim
     install: |
       bin.install "tdb"
     test: |
