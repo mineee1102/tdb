@@ -630,8 +630,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.nvimPane.Write([]byte{0x1b})
 					return m, nil
 				default:
-					// Any other key: close completions and forward to neovim
-					m.nvimCompletions = nil
+					// Close completions and forward to neovim
+					// For text input, keep showing completions until tick recomputes
+					if msg.Type == tea.KeyRunes {
+						m.nvimTextInputTicks = 4
+					} else {
+						m.nvimCompletions = nil
+					}
 					raw := keyToBytes(msg)
 					if len(raw) > 0 {
 						m.nvimPane.Write(raw)
