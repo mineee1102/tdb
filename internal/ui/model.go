@@ -1022,6 +1022,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.nvimTextInputTicks--
 				word := m.nvimPane.CurrentWord()
 				if len([]rune(word)) >= 2 {
+					// Ensure editor has latest table/column cache
+					m.sqlEditorModel.cachedTableNames = m.cachedTableNames
+					if m.cachedColumnNames != nil {
+						m.sqlEditorModel.cachedColumnNames = m.cachedColumnNames
+					}
 					candidates, prefix := m.sqlEditorModel.FindCompletions(word)
 					if !stringSliceEqual(m.nvimCompletions, candidates) {
 						m.nvimCompletionIndex = 0
