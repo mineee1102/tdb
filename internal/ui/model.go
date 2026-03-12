@@ -1002,28 +1002,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// ── Neovim tick message ──
 	case nvimTickMsg:
 		if m.nvimEnabled && m.nvimPane != nil && m.nvimPane.IsRunning() {
-			// Auto-completion: only in insert mode after text input
-			if !m.nvimPane.IsInsertMode() || !m.nvimTextInput {
+			// Clear completions when leaving insert mode
+			if !m.nvimPane.IsInsertMode() {
 				if len(m.nvimCompletions) > 0 {
 					m.nvimCompletions = nil
 					m.nvimCompletionIndex = 0
 				}
+				m.nvimTextInput = false
 				return m, tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg { return nvimTickMsg{} })
 			}
-			word := m.nvimPane.CurrentWord()
-			if len([]rune(word)) >= 2 {
-				candidates, prefix := m.sqlEditorModel.FindCompletions(word)
-				if !stringSliceEqual(m.nvimCompletions, candidates) {
+			// Recompute completions only when new text was typed
+			if m.nvimTextInput {
+				m.nvimTextInput = false
+				word := m.nvimPane.CurrentWord()
+				if len([]rune(word)) >= 2 {
+					candidates, prefix := m.sqlEditorModel.FindCompletions(word)
+					if !stringSliceEqual(m.nvimCompletions, candidates) {
+						m.nvimCompletionIndex = 0
+						m.nvimCompletions = candidates
+						m.nvimCompletionPrefix = prefix
+					}
+				} else if len(m.nvimCompletions) > 0 {
+					m.nvimCompletions = nil
 					m.nvimCompletionIndex = 0
-					m.nvimCompletions = candidates
-					m.nvimCompletionPrefix = prefix
 				}
-			} else if len(m.nvimCompletions) > 0 {
-				m.nvimCompletions = nil
-				m.nvimCompletionIndex = 0
 			}
-			// Completions computed; wait for next text input
-			m.nvimTextInput = false
 			return m, tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg { return nvimTickMsg{} })
 		}
 		if m.nvimEnabled && m.nvimPane != nil && m.nvimPane.HasExited() {
