@@ -602,15 +602,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(m.nvimCompletions) > 0 {
 				switch msg.String() {
 				case "tab", "enter":
-					// Accept completion: delete prefix chars and type the selected completion
+					// Accept completion: delete current word and type the selected completion
 					if m.nvimCompletionIndex < len(m.nvimCompletions) {
 						selected := m.nvimCompletions[m.nvimCompletionIndex]
-						prefix := m.nvimCompletionPrefix
-						for i := 0; i < len([]rune(prefix)); i++ {
+						// Use current word length (not original prefix) since user may have typed more
+						currentWord := m.nvimPane.CurrentWord()
+						for i := 0; i < len([]rune(currentWord)); i++ {
 							m.nvimPane.Write([]byte{0x08})
 						}
 						m.nvimPane.Write([]byte(selected))
 						m.nvimCompletions = nil
+						m.nvimTextInputTicks = 0
 					}
 					return m, nil
 				case "ctrl+n", "down":
