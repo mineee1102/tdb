@@ -623,8 +623,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 					return m, nil
 				case "esc":
-					// Dismiss suggestions without forwarding esc to nvim
+					// Dismiss suggestions and forward esc to nvim (enter normal mode)
 					m.nvimCompletions = nil
+					m.nvimPane.Write([]byte{0x1b})
 					return m, nil
 				default:
 					// Any other key: close completions and forward to neovim
