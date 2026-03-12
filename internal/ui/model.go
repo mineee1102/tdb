@@ -79,6 +79,7 @@ type Model struct {
 	nvimCompletions       []string
 	nvimCompletionIndex   int
 	nvimCompletionPrefix  string
+	nvimTextInput         bool // true when last key was a text input (not cursor movement)
 
 	// g-prefix pending for tab navigation (gh / gl)
 	gPending bool
@@ -625,6 +626,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case "esc":
 					// Dismiss suggestions and forward esc to nvim (enter normal mode)
 					m.nvimCompletions = nil
+					m.nvimTextInput = false
 					m.nvimPane.Write([]byte{0x1b})
 					return m, nil
 				default:
@@ -675,6 +677,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Forward all other keys to neovim
 			raw := keyToBytes(msg)
 			if len(raw) > 0 {
+				// Track whether this is a text input key (for completion triggering)
+				if m.nvimPane.IsInsertMode() && msg.Type == tea.KeyRunes {
+					m.nvimTextInput = true
+				} else {
+					m.nvimTextInput = false
+				}
 				m.nvimPane.Write(raw)
 			}
 			return m, nil
@@ -994,8 +1002,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// ── Neovim tick message ──
 	case nvimTickMsg:
 		if m.nvimEnabled && m.nvimPane != nil && m.nvimPane.IsRunning() {
-			// Auto-completion: only in insert mode
-			if !m.nvimPane.IsInsertMode() {
+			// Auto-completion: only in insert mode after text input
+			if !m.nvimPane.IsInsertMode() || !m.nvimTextInput {
 				m.nvimCompletions = nil
 				m.nvimCompletionIndex = 0
 				return m, tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg { return nvimTickMsg{} })
